@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Plus, Trash2, PiggyBank, CircleCheck as CheckCircle2 } from 'lucide-react';
 import type { SavingsGoal } from '../types';
-import { generateId, formatRupees, formatPercent } from '../utils';
+import { formatRupees, formatPercent } from '../utils';
 
 interface FinanceProps {
   savingsGoals: SavingsGoal[];
-  onAddGoal: (goal: SavingsGoal) => void;
+  onAddGoal: (goal: Omit<SavingsGoal, 'id'>) => void;
   onDeleteGoal: (id: string) => void;
   onContribute: (goalId: string, amount: number) => void;
 }
@@ -26,7 +26,6 @@ export function Finance({
   const handleAddGoal = () => {
     if (newGoalName.trim() && newGoalTarget) {
       onAddGoal({
-        id: generateId(),
         name: newGoalName.trim(),
         target: parseInt(newGoalTarget, 10) || 0,
         saved: parseInt(newGoalSaved, 10) || 0,

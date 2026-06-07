@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Heart, Save, Dumbbell, Droplets, Moon, MessageSquare } from 'lucide-react';
 import type { WellbeingEntry } from '../types';
-import { getDateString, generateId } from '../utils';
+import { getDateString } from '../utils';
 import { useToast } from '../context/ToastContext';
 
 interface WellbeingProps {
   entries: WellbeingEntry[];
-  onSave: (entry: WellbeingEntry) => void;
+  onSave: (entry: Omit<WellbeingEntry, 'id'>) => void;
 }
 
 const MOODS: WellbeingEntry['mood'][] = ['Great', 'Good', 'Okay', 'Low', 'Rough'];
@@ -36,17 +36,14 @@ export function Wellbeing({ entries, onSave }: WellbeingProps) {
       return;
     }
 
-    const entry: WellbeingEntry = {
-      id: todayEntry?.id || generateId(),
+    onSave({
       date: today,
       mood,
       sleep,
       water,
       exercised,
       note,
-    };
-
-    onSave(entry);
+    });
     showToast('Wellbeing check-in saved! 💚');
   };
 

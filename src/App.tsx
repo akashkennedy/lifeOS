@@ -1,83 +1,62 @@
-import { useState } from 'react';
 import { ToastProvider } from './context/ToastContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Layout } from './components/Layout';
 import { Overview } from './components/Overview';
 import { Focus } from './components/Focus';
 import { Goals } from './components/Goals';
 import { Finance } from './components/Finance';
 import { Wellbeing } from './components/Wellbeing';
+import { Auth } from './components/Auth';
+import { useTodos } from './hooks/useTodos';
+import { useGoals as useGoalsHook } from './hooks/useGoals';
+import { useSavingsGoals } from './hooks/useSavingsGoals';
+import { useFocusSessions } from './hooks/useFocusSessions';
+import { useWellbeing as useWellbeingHook } from './hooks/useWellbeing';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import type { Todo, Goal, SavingsGoal, FocusSession, WellbeingEntry, Section } from './types';
+import type { Section } from './types';
 
-const STORAGE_KEYS = {
-  todos: 'lifeos_todos',
-  goals: 'lifeos_goals',
-  savings: 'lifeos_savings',
-  sessions: 'lifeos_sessions',
-  wellbeing: 'lifeos_wellbeing',
-  section: 'lifeos_section',
-};
+function Dashboard() {
+  const { user, loading: authLoading, signOut } = useAuth();
+  const [section, setSection] = useLocalStorage<Section>('lifeos_section', 'overview');
 
-function AppContent() {
-  const [section, setSection] = useLocalStorage<Section>(STORAGE_KEYS.section, 'overview');
-  const [todos, setTodos] = useLocalStorage<Todo[]>(STORAGE_KEYS.todos, []);
-  const [goals, setGoals] = useLocalStorage<Goal[]>(STORAGE_KEYS.goals, []);
-  const [savingsGoals, setSavingsGoals] = useLocalStorage<SavingsGoal[]>(STORAGE_KEYS.savings, []);
-  const [sessions, setSessions] = useLocalStorage<FocusSession[]>(STORAGE_KEYS.sessions, []);
-  const [wellbeing, setWellbeing] = useLocalStorage<WellbeingEntry[]>(STORAGE_KEYS.wellbeing, []);
+  const { todos, loading: todosLoading, addTodo, toggleTodo, deleteTodo } = useTodos();
+  const { goals, loading: goalsLoading, addGoal, toggleGoal, deleteGoal } = useGoalsHook();
+  const { savingsGoals, loading: savingsLoading, addGoal: addSavingsGoal, contribute, deleteGoal: deleteSavingsGoal } = useSavingsGoals();
+  const { sessions, loading: sessionsLoading, addSession } = useFocusSessions();
+  const { entries, loading: wellbeingLoading, saveEntry } = useWellbeingHook();
 
-  // Todo handlers
-  const addTodo = (todo: Todo) => setTodos((prev) => [...prev, todo]);
-  const toggleTodo = (id: string) =>
-    setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-surface-dark">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+      </div>
     );
-  const deleteTodo = (id: string) =>
-    setTodos((prev) => prev.filter((t) => t.id !== id));
+  }
 
-  // Goal handlers
-  const addGoal = (goal: Goal) => setGoals((prev) => [...prev, goal]);
-  const toggleGoal = (id: string) =>
-    setGoals((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, done: !g.done } : g))
+  if (!user) {
+    return <Auth />;
+  }
+
+  const isLoading = todosLoading || goalsLoading || savingsLoading || sessionsLoading || wellbeingLoading;
+
+  if (isLoading) {
+    return (
+      <Layout activeSection={section} onSectionChange={setSection} onSignOut={signOut}>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+        </div>
+      </Layout>
     );
-  const deleteGoal = (id: string) =>
-    setGoals((prev) => prev.filter((g) => g.id !== id));
-
-  // Savings handlers
-  const addSavingsGoal = (goal: SavingsGoal) =>
-    setSavingsGoals((prev) => [...prev, goal]);
-  const deleteSavingsGoal = (id: string) =>
-    setSavingsGoals((prev) => prev.filter((g) => g.id !== id));
-  const contributeToGoal = (id: string, amount: number) =>
-    setSavingsGoals((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, saved: g.saved + amount } : g))
-    );
-
-  // Focus session handler
-  const addSession = (session: FocusSession) =>
-    setSessions((prev) => [...prev, session]);
-
-  // Wellbeing handler
-  const saveWellbeing = (entry: WellbeingEntry) =>
-    setWellbeing((prev) => {
-      const existing = prev.findIndex((e) => e.date === entry.date);
-      if (existing >= 0) {
-        const updated = [...prev];
-        updated[existing] = entry;
-        return updated;
-      }
-      return [...prev, entry];
-    });
+  }
 
   return (
-    <Layout activeSection={section} onSectionChange={setSection}>
+    <Layout activeSection={section} onSectionChange={setSection} onSignOut={signOut}>
       {section === 'overview' && (
         <Overview
           todos={todos}
           sessions={sessions}
           savingsGoals={savingsGoals}
-          wellbeing={wellbeing}
+          wellbeing={entries}
           onToggleTodo={toggleTodo}
         />
       )}
@@ -101,13 +80,21 @@ function AppContent() {
           savingsGoals={savingsGoals}
           onAddGoal={addSavingsGoal}
           onDeleteGoal={deleteSavingsGoal}
-          onContribute={contributeToGoal}
+          onContribute={contribute}
         />
       )}
       {section === 'wellbeing' && (
-        <Wellbeing entries={wellbeing} onSave={saveWellbeing} />
+        <Wellbeing entries={entries} onSave={saveEntry} />
       )}
     </Layout>
+  );
+}
+
+function AppContent() {
+  return (
+    <AuthProvider>
+      <Dashboard />
+    </AuthProvider>
   );
 }
 

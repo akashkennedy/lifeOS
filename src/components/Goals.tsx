@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { Plus, Trash2, CircleCheck as CheckCircle2, Target, Calendar } from 'lucide-react';
 import type { Todo, Goal } from '../types';
-import { getDateString, generateId } from '../utils';
+import { getDateString } from '../utils';
 
 interface GoalsProps {
   todos: Todo[];
   goals: Goal[];
-  onAddTodo: (todo: Todo) => void;
+  onAddTodo: (text: string) => void;
   onToggleTodo: (id: string) => void;
   onDeleteTodo: (id: string) => void;
-  onAddGoal: (goal: Goal) => void;
+  onAddGoal: (goal: Omit<Goal, 'id'>) => void;
   onToggleGoal: (id: string) => void;
   onDeleteGoal: (id: string) => void;
 }
@@ -50,12 +50,7 @@ export function Goals({
 
   const handleAddTodo = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && newTodo.trim()) {
-      onAddTodo({
-        id: generateId(),
-        text: newTodo.trim(),
-        done: false,
-        date: today,
-      });
+      onAddTodo(newTodo.trim());
       setNewTodo('');
     }
   };
@@ -63,7 +58,6 @@ export function Goals({
   const handleAddGoal = () => {
     if (newGoalTitle.trim()) {
       onAddGoal({
-        id: generateId(),
         title: newGoalTitle.trim(),
         category: newGoalCategory,
         dueDate: newGoalDueDate || undefined,

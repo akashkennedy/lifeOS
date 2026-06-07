@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, RotateCcw, Coffee, Briefcase } from 'lucide-react';
 import type { FocusSession } from '../types';
-import { formatTime, getDateString, generateId } from '../utils';
+import { formatTime, getDateString } from '../utils';
 import { useToast } from '../context/ToastContext';
 
 type TimerMode = 'work' | 'break' | 'longBreak';
@@ -14,7 +14,7 @@ const DURATIONS: Record<TimerMode, number> = {
 
 interface FocusProps {
   sessions: FocusSession[];
-  onSessionComplete: (session: FocusSession) => void;
+  onSessionComplete: (minutes: number) => void;
 }
 
 export function Focus({ sessions, onSessionComplete }: FocusProps) {
@@ -34,17 +34,7 @@ export function Focus({ sessions, onSessionComplete }: FocusProps) {
 
   const handleComplete = useCallback(() => {
     if (mode === 'work') {
-      const now = new Date();
-      const session: FocusSession = {
-        id: generateId(),
-        date: today,
-        time: now.toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-        minutes: DURATIONS.work / 60,
-      };
-      onSessionComplete(session);
+      onSessionComplete(DURATIONS.work / 60);
       showToast('Focus session complete! 🎯');
     } else {
       showToast('Break done! Ready to focus?');
@@ -52,7 +42,7 @@ export function Focus({ sessions, onSessionComplete }: FocusProps) {
     setIsRunning(false);
     setTimeLeft(DURATIONS.work);
     setMode('work');
-  }, [mode, today, onSessionComplete, showToast]);
+  }, [mode, onSessionComplete, showToast]);
 
   useEffect(() => {
     if (isRunning && timeLeft > 0) {

@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { LayoutDashboard, Timer, Target, PiggyBank, Heart } from 'lucide-react';
+import { LayoutDashboard, Timer, Target, PiggyBank, Heart, LogOut } from 'lucide-react';
 import type { Section } from '../types';
 import { getTodayFormatted } from '../utils';
 
@@ -15,9 +15,10 @@ interface LayoutProps {
   children: ReactNode;
   activeSection: Section;
   onSectionChange: (section: Section) => void;
+  onSignOut?: () => void;
 }
 
-export function Layout({ children, activeSection, onSectionChange }: LayoutProps) {
+export function Layout({ children, activeSection, onSectionChange, onSignOut }: LayoutProps) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -62,6 +63,17 @@ export function Layout({ children, activeSection, onSectionChange }: LayoutProps
               })}
             </ul>
           </nav>
+          {onSignOut && (
+            <div className="p-4 border-t border-border dark:border-gray-800">
+              <button
+                onClick={onSignOut}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-150"
+              >
+                <LogOut size={20} />
+                <span className="font-medium">Sign Out</span>
+              </button>
+            </div>
+          )}
         </aside>
       )}
 
@@ -71,9 +83,19 @@ export function Layout({ children, activeSection, onSectionChange }: LayoutProps
             <h1 className="text-xl font-bold text-[#1a1a1a] dark:text-white">
               LifeOS
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {getTodayFormatted()}
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {getTodayFormatted()}
+              </p>
+              {onSignOut && (
+                <button
+                  onClick={onSignOut}
+                  className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  <LogOut size={20} />
+                </button>
+              )}
+            </div>
           </div>
         </header>
         <div className="p-6 md:p-8">{children}</div>
