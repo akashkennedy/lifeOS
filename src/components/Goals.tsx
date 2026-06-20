@@ -89,6 +89,18 @@ export function Goals({
             placeholder="Add a task..."
             className="flex-1 bg-transparent outline-none text-[#1a1a1a] dark:text-white placeholder-gray-400"
           />
+          <button
+            onClick={() => {
+              if (newTodo.trim()) {
+                onAddTodo(newTodo.trim());
+                setNewTodo('');
+              }
+            }}
+            disabled={!newTodo.trim()}
+            className="px-3 py-1.5 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
+          >
+            Add Task
+          </button>
         </div>
         {todayTodos.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
