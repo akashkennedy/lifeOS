@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Coffee, Briefcase } from 'lucide-react';
-import type { FocusSession } from '../types';
+import { Play, Pause, RotateCcw, Coffee, Briefcase, Target, CircleCheck as CheckCircle2 } from 'lucide-react';
+import type { FocusSession, Todo } from '../types';
 import { formatTime, getDateString } from '../utils';
 import { useToast } from '../context/ToastContext';
 
@@ -14,13 +14,16 @@ const DURATIONS: Record<TimerMode, number> = {
 
 interface FocusProps {
   sessions: FocusSession[];
-  onSessionComplete: (minutes: number) => void;
+  todos: Todo[];
+  onSessionComplete: (minutes: number, taskId?: string | null) => void;
 }
 
-export function Focus({ sessions, onSessionComplete }: FocusProps) {
+export function Focus({ sessions, todos, onSessionComplete }: FocusProps) {
   const [mode, setMode] = useState<TimerMode>('work');
   const [timeLeft, setTimeLeft] = useState(DURATIONS.work);
   const [isRunning, setIsRunning] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [completedCycles, setCompletedCycles] = useState(0);
   const intervalRef = useRef<number | null>(null);
   const { showToast } = useToast();
 
@@ -28,21 +31,37 @@ export function Focus({ sessions, onSessionComplete }: FocusProps) {
   const todaySessions = sessions.filter((s) => s.date === today);
   const totalMinutes = todaySessions.reduce((sum, s) => sum + s.minutes, 0);
 
+  const undoneTodos = todos.filter((t) => !t.done && t.date === today);
+  const selectedTask = undoneTodos.find((t) => t.id === selectedTaskId);
+
   const circumference = 2 * Math.PI * 120;
   const progress = (DURATIONS[mode] - timeLeft) / DURATIONS[mode];
   const strokeDashoffset = circumference * (1 - progress);
 
   const handleComplete = useCallback(() => {
     if (mode === 'work') {
-      onSessionComplete(DURATIONS.work / 60);
-      showToast('Focus session complete! 🎯');
+      onSessionComplete(DURATIONS.work / 60, selectedTaskId);
+      const newCycles = completedCycles + 1;
+      setCompletedCycles(newCycles);
+      showToast(selectedTaskId
+        ? `Focus on "${selectedTask?.text}" complete!`
+        : 'Focus session complete!');
+      // After 4 work sessions, suggest a long break
+      if (newCycles % 4 === 0) {
+        setMode('longBreak');
+        setTimeLeft(DURATIONS.longBreak);
+        showToast('Great work! Take a long break.');
+        return;
+      }
+      setMode('break');
+      setTimeLeft(DURATIONS.break);
     } else {
       showToast('Break done! Ready to focus?');
+      setMode('work');
+      setTimeLeft(DURATIONS.work);
     }
     setIsRunning(false);
-    setTimeLeft(DURATIONS.work);
-    setMode('work');
-  }, [mode, onSessionComplete, showToast]);
+  }, [mode, onSessionComplete, selectedTaskId, selectedTask, completedCycles, showToast]);
 
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
@@ -81,6 +100,62 @@ export function Focus({ sessions, onSessionComplete }: FocusProps) {
         Focus Timer
       </h2>
 
+      {/* Task Selector */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-border dark:border-gray-800 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <Target size={18} className="text-accent" />
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            Focus Target
+          </h3>
+        </div>
+        {undoneTodos.length === 0 ? (
+          <div className="text-center py-4 text-gray-400">
+            <p className="text-sm">No tasks for today. Add tasks in Goals to focus on them.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              Select a task to focus on during this session:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedTaskId(null)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
+                  selectedTaskId === null
+                    ? 'bg-accent text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                General Focus
+              </button>
+              {undoneTodos.map((todo) => (
+                <button
+                  key={todo.id}
+                  onClick={() => setSelectedTaskId(todo.id)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 max-w-xs truncate ${
+                    selectedTaskId === todo.id
+                      ? 'bg-accent text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {todo.text}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {selectedTask && (
+          <div className="mt-3 p-3 bg-accent/10 rounded-lg border border-accent/20">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-accent" />
+              <span className="text-sm font-medium text-accent">
+                Focusing on: {selectedTask.text}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Mode Selector */}
       <div className="flex justify-center gap-2">
         <button
@@ -116,6 +191,25 @@ export function Focus({ sessions, onSessionComplete }: FocusProps) {
           <Coffee size={18} />
           Long Break
         </button>
+      </div>
+
+      {/* Cycle Counter */}
+      <div className="flex justify-center">
+        <div className="flex items-center gap-1">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                i < (completedCycles % 4)
+                  ? 'bg-accent'
+                  : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            />
+          ))}
+          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+            {Math.floor(completedCycles / 4)} set{Math.floor(completedCycles / 4) !== 1 ? 's' : ''}
+          </span>
+        </div>
       </div>
 
       {/* Timer Circle */}
@@ -196,9 +290,16 @@ export function Focus({ sessions, onSessionComplete }: FocusProps) {
                 key={session.id}
                 className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
               >
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {session.time}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {session.time}
+                  </span>
+                  {session.task_text && (
+                    <span className="text-xs px-2 py-1 bg-accent/10 text-accent rounded-full truncate max-w-[200px]">
+                      {session.task_text}
+                    </span>
+                  )}
+                </div>
                 <span className="text-sm font-medium text-[#1a1a1a] dark:text-white">
                   {session.minutes} minutes
                 </span>

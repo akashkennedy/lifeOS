@@ -25,6 +25,8 @@ export interface FocusSession {
   date: string;
   time: string;
   minutes: number;
+  task_id?: string | null;
+  task_text?: string | null;
 }
 
 export interface WellbeingEntry {

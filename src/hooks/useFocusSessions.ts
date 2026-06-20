@@ -18,7 +18,7 @@ export function useFocusSessions() {
     const fetchSessions = async () => {
       const { data, error } = await supabase
         .from('focus_sessions')
-        .select('*')
+        .select('*, todos(text)')
         .order('created_at', { ascending: false });
 
       if (!error && data) {
@@ -28,6 +28,8 @@ export function useFocusSessions() {
             date: s.date,
             time: s.time,
             minutes: s.minutes,
+            task_id: s.task_id ?? null,
+            task_text: s.todos?.text ?? null,
           }))
         );
       }
@@ -38,7 +40,7 @@ export function useFocusSessions() {
   }, [user]);
 
   const addSession = useCallback(
-    async (minutes: number) => {
+    async (minutes: number, taskId?: string | null) => {
       if (!user) return;
       const now = new Date();
       const date = now.toISOString().split('T')[0];
@@ -47,20 +49,30 @@ export function useFocusSessions() {
         minute: '2-digit',
       });
 
+      const insertData: Record<string, unknown> = {
+        user_id: user.id,
+        date,
+        time,
+        minutes,
+      };
+      if (taskId) insertData.task_id = taskId;
+
       const { data, error } = await supabase
         .from('focus_sessions')
-        .insert({
-          user_id: user.id,
-          date,
-          time,
-          minutes,
-        })
-        .select()
+        .insert(insertData)
+        .select('*, todos(text)')
         .single();
 
       if (!error && data) {
         setSessions((prev) => [
-          { id: data.id, date: data.date, time: data.time, minutes: data.minutes },
+          {
+            id: data.id,
+            date: data.date,
+            time: data.time,
+            minutes: data.minutes,
+            task_id: data.task_id ?? null,
+            task_text: data.todos?.text ?? null,
+          },
           ...prev,
         ]);
       }
