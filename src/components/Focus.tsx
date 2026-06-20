@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Coffee, Briefcase, Target, CircleCheck as CheckCircle2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Coffee, Briefcase, Target, CircleCheck as CheckCircle2, Plus } from 'lucide-react';
 import type { FocusSession, Todo } from '../types';
 import { formatTime, getDateString } from '../utils';
 import { useToast } from '../context/ToastContext';
@@ -16,14 +16,16 @@ interface FocusProps {
   sessions: FocusSession[];
   todos: Todo[];
   onSessionComplete: (minutes: number, taskId?: string | null) => void;
+  onAddTodo: (text: string) => void;
 }
 
-export function Focus({ sessions, todos, onSessionComplete }: FocusProps) {
+export function Focus({ sessions, todos, onSessionComplete, onAddTodo }: FocusProps) {
   const [mode, setMode] = useState<TimerMode>('work');
   const [timeLeft, setTimeLeft] = useState(DURATIONS.work);
   const [isRunning, setIsRunning] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [completedCycles, setCompletedCycles] = useState(0);
+  const [newTodo, setNewTodo] = useState('');
   const intervalRef = useRef<number | null>(null);
   const { showToast } = useToast();
 
@@ -107,6 +109,22 @@ export function Focus({ sessions, todos, onSessionComplete }: FocusProps) {
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
             Focus Target
           </h3>
+        </div>
+        <div className="flex items-center gap-2 mb-3">
+          <Plus size={20} className="text-gray-400" />
+          <input
+            type="text"
+            value={newTodo}
+            onChange={(e) => setNewTodo(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && newTodo.trim()) {
+                onAddTodo(newTodo.trim());
+                setNewTodo('');
+              }
+            }}
+            placeholder="Add a quick task..."
+            className="flex-1 bg-transparent outline-none text-[#1a1a1a] dark:text-white placeholder-gray-400 text-sm"
+          />
         </div>
         {undoneTodos.length === 0 ? (
           <div className="text-center py-4 text-gray-400">

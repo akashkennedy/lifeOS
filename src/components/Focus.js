@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Coffee, Briefcase, Target, CircleCheck as CheckCircle2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Coffee, Briefcase, Target, CircleCheck as CheckCircle2, Plus } from 'lucide-react';
 import { formatTime, getDateString } from '../utils';
 import { useToast } from '../context/ToastContext';
 const DURATIONS = {
@@ -8,12 +8,13 @@ const DURATIONS = {
     break: 5 * 60,
     longBreak: 15 * 60,
 };
-export function Focus({ sessions, todos, onSessionComplete }) {
+export function Focus({ sessions, todos, onSessionComplete, onAddTodo }) {
     const [mode, setMode] = useState('work');
     const [timeLeft, setTimeLeft] = useState(DURATIONS.work);
     const [isRunning, setIsRunning] = useState(false);
     const [selectedTaskId, setSelectedTaskId] = useState(null);
     const [completedCycles, setCompletedCycles] = useState(0);
+    const [newTodo, setNewTodo] = useState('');
     const intervalRef = useRef(null);
     const { showToast } = useToast();
     const today = getDateString();
@@ -76,7 +77,12 @@ export function Focus({ sessions, todos, onSessionComplete }) {
         setMode(newMode);
         setTimeLeft(DURATIONS[newMode]);
     };
-    return (_jsxs("div", { className: "space-y-8", children: [_jsx("h2", { className: "text-2xl font-bold text-[#1a1a1a] dark:text-white", children: "Focus Timer" }), _jsxs("div", { className: "bg-white dark:bg-gray-900 rounded-xl p-6 border border-border dark:border-gray-800 shadow-sm", children: [_jsxs("div", { className: "flex items-center gap-2 mb-3", children: [_jsx(Target, { size: 18, className: "text-accent" }), _jsx("h3", { className: "text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide", children: "Focus Target" })] }), undoneTodos.length === 0 ? (_jsx("div", { className: "text-center py-4 text-gray-400", children: _jsx("p", { className: "text-sm", children: "No tasks for today. Add tasks in Goals to focus on them." }) })) : (_jsxs("div", { className: "space-y-2", children: [_jsx("p", { className: "text-sm text-gray-500 dark:text-gray-400 mb-2", children: "Select a task to focus on during this session:" }), _jsxs("div", { className: "flex flex-wrap gap-2", children: [_jsx("button", { onClick: () => setSelectedTaskId(null), className: `px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${selectedTaskId === null
+    return (_jsxs("div", { className: "space-y-8", children: [_jsx("h2", { className: "text-2xl font-bold text-[#1a1a1a] dark:text-white", children: "Focus Timer" }), _jsxs("div", { className: "bg-white dark:bg-gray-900 rounded-xl p-6 border border-border dark:border-gray-800 shadow-sm", children: [_jsxs("div", { className: "flex items-center gap-2 mb-3", children: [_jsx(Target, { size: 18, className: "text-accent" }), _jsx("h3", { className: "text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide", children: "Focus Target" })] }), _jsxs("div", { className: "flex items-center gap-2 mb-3", children: [_jsx(Plus, { size: 20, className: "text-gray-400" }), _jsx("input", { type: "text", value: newTodo, onChange: (e) => setNewTodo(e.target.value), onKeyDown: (e) => {
+                                    if (e.key === 'Enter' && newTodo.trim()) {
+                                        onAddTodo(newTodo.trim());
+                                        setNewTodo('');
+                                    }
+                                }, placeholder: "Add a quick task...", className: "flex-1 bg-transparent outline-none text-[#1a1a1a] dark:text-white placeholder-gray-400 text-sm" })] }), undoneTodos.length === 0 ? (_jsx("div", { className: "text-center py-4 text-gray-400", children: _jsx("p", { className: "text-sm", children: "No tasks for today. Add tasks in Goals to focus on them." }) })) : (_jsxs("div", { className: "space-y-2", children: [_jsx("p", { className: "text-sm text-gray-500 dark:text-gray-400 mb-2", children: "Select a task to focus on during this session:" }), _jsxs("div", { className: "flex flex-wrap gap-2", children: [_jsx("button", { onClick: () => setSelectedTaskId(null), className: `px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${selectedTaskId === null
                                             ? 'bg-accent text-white'
                                             : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`, children: "General Focus" }), undoneTodos.map((todo) => (_jsx("button", { onClick: () => setSelectedTaskId(todo.id), className: `px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 max-w-xs truncate ${selectedTaskId === todo.id
                                             ? 'bg-accent text-white'

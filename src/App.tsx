@@ -61,7 +61,7 @@ function Dashboard() {
         />
       )}
       {section === 'focus' && (
-        <Focus sessions={sessions} todos={todos} onSessionComplete={addSession} />
+        <Focus sessions={sessions} todos={todos} onSessionComplete={addSession} onAddTodo={addTodo} />
       )}
       {section === 'goals' && (
         <Goals
